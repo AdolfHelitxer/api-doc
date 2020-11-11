@@ -1,0 +1,374 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "开放 API 文档",
+    "version": "1.0.0",
+    "description": "CODING 提供了丰富的 API 接口，注册应用即可使用，无需审核，支持两种认证方式：[OAuth 2.0 协议](#oauth)、[个人访问令牌](#personal-token)。\n\n### [OAuth 认证](#oauth)\n\n#### [创建 CODING 应用](#oauth-client)\n\n1.  点击【个人设置】->【开放生态】->【创建应用】，填写信息。「回调地址」可填写为 `http://127.0.0.1`，便于本地开发。\n\n![](https://help-assets.codehub.cn/enterprise/20200605144502.png)\n\n![](https://help-assets.codehub.cn/enterprise/20191022160453.png)\n\n2.  创建完成会获得 Client ID 和 Client Secret。\n\n![](https://help-assets.codehub.cn/enterprise/20200723105233.png)\n\n#### [用户授权](#oauth-scopes)\n\n浏览器访问以下链接，进入到授权登录页面：\n\n```shell\nGET https://{your-team}.coding.net/oauth_authorize.html\n```\n\n参数说明：\n\n-   your-team：团队域名前缀；\n-   client_id：应用详情页的 Client ID；\n-   redirect_uri：应用详情页填写的回调地址；\n-   response_type：返回类型，固定为 code；\n-   scope：授权范围，以逗号分隔，包括：\n\nscope 名称 | 授权 | 说明\n-- | -- | --\nuser | 读 | 获取用户信息（名称、头像等 ）\nuser:email | 读 | 读取用户的 email\nnotification | 读/写 | 读取用户通知信息\nproject | 读 | 授权项目信息、项目列表，仓库信息，公钥列表、成员\nproject:api_doc | 发布 | 授权发布 API 文档\nproject:artifacts | 读/写 | 授权推送、拉取制品库\nproject:depot | 读/写 | 完整的仓库控制权限\nproject:file | 读/写 | 授权读取与操作文件\nproject:issue | 读/写 | 授权读取与操作项目协同模块\nproject:key | 读/写 | 授权读取与操作部署公钥和个人公钥\nproject:members | 读/写 | 授权项目管理者读取与操作成员\nproject:notice | 读/写 | 授权发布、删除、查询项目公告接口\n\n![](https://help-assets.codehub.cn/enterprise/20191022164800.png)\n\n登录授权后，浏览器将带着授权码（code）参数跳转到回调地址，如：\n\n```shell\nhttp://127.0.0.1:9002/api/oauth/callback?code=7923f69445119400c12e1a70b027a97a\n```\n\n![](https://help-assets.codehub.cn/enterprise/20191022165959.png)\n\n#### [获取 access_token](#oauth-access-token)\n\n获取授权码（code）后，开发者的后端程序向 CODING 发送请求，获取 access_token。\n\n请求链接：\n\n```shell\nPOST https://{your-team}.coding.net/api/oauth/access_token\n```\n\n参数说明：\n\n-   your-team：团队域名前缀；\n-   client_id：应用详情页的 Client ID；\n-   client_secret：应用详情页的 Client Secret；\n-   code：上一步获取的授权码；\n-   grant_type：授权类型，固定为 authorization_code；\n\n返回值：\n\n```json\n{\n    \"access_token\": \"8883405e6c14856a1e2b3c4e2d2f2666\",\n    \"refresh_token\": \"6663211fda1a41f5a1c1fa320d819aaa\",\n    \"team\": \"anywhere\",\n    \"expires_in\": \"780260\",\n    \"token_type\":\"bearer\"\n}\n```\n\n#### [获取当前用户信息](#oauth-get-user)\n\n请求链接：\n\n```shell\nGET https://{your-team}.coding.net/api/me\n```\n\n参数说明：\n\n-   access_token：上一步获取的 access_token；\n\n请求示例：\n\n```shell\ncurl https://codes-farm.coding.net/api/me?access_token=at58a21646f43699196c42a30d77at\n```\n\n返回值：\n\n```json\n{\n  \"avatar\": \"https://coding-net-production-static-ci.codehub.cn/2cb665a3-bebc-4b09-aa00-2b6df3e33edc.jpg\",\n  \"created_at\": 1572178118000,\n  \"global_key\": \"KMRnIKgzbV\",\n  \"name\": \"sink\",\n  \"name_pinyin\": \"sink\",\n  \"updated_at\": 1598411867000,\n  \"path\": \"/u/KMRnIKgzbV\",\n  \"id\": 183478,\n  \"team\": \"anywhere\",\n  \"email_validation\": 1\n}\n```\n\n### [个人令牌认证](#personal-token)\n\n#### [获取个人令牌](#personal-token-create)\n\n点击右上角的【个人设置】>【访问令牌】>【新建令牌】，勾选相关权限后会生成「个人访问令牌」。若刷新页面令牌会消失，需输入账号密码后重新生成。\n\n![](https://help-assets.codehub.cn/enterprise/20200910171618.png)\n\n#### [获取当前用户信息](#personal-token-get-user)\n\n请求链接：\n\n```shell\nGET https://{your-team}.coding.net/api/me\n```\n\nheader：\n\n```text\nAuthorization: token {访问令牌}\n```\n\n请求示例：\n\n```shell\ncurl -H 'Authorization: token t0544956253e82fa2ba780a5248750t' \\\nhttps://codes-farm.coding.net/api/me\n```\n\n### [新版接口认证方式](#new-api)\n\n新版接口不再使用 RESTFul，而使用 POST 和统一链接。\n\n统一链接：`https://e.coding.net/open-api`\n\nAccept:  `application/json`\n\nOAuth2：`Authorization: Bearer at58a21646f43699196c42a30d77at`\n\n个人令牌:\n\n`Authorization: token f5d7a1e1dabb116335b648c5fd9a1c868e4f31d3`\n\n输入示例：\n\n```json\n{\n    \"Action\":\"DescribeOneProject\",\n    \"ProjectId\":2\n}    \n```\n\n输出示例：\n\n```json\n{\n  \"Response\": {\n    \"Project\": {\n      \"Name\": \"coding-demo\",\n      \"Id\": 2,\n    },\n    \"RequestId\": \"ae8e2d5f-569b-443e-8c61-440ea3a7562a\"\n  }\n}\n\n```",
+    "contact": {
+      "name": "CODING",
+      "url": "https://coding.net",
+      "email": "support@coding.net"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    },
+    "termsOfService": "http://swagger.io/terms/"
+  },
+  "servers": [
+    {
+      "url": "https://{your-team}.coding.net/open-api"
+    }
+  ],
+  "paths": {
+    "/describe-current-user": {
+      "parameters": [],
+      "post": {
+        "summary": "获取用户个人信息",
+        "operationId": "describe-current-user  获取用户个人信息",
+        "responses": {
+          "200": {
+            "description": "输入示例 / 输出示例",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "输入示例": {
+                    "value": {
+                      "Action": "DescribeCodingCurrentUser"
+                    }
+                  },
+                  "输出示例": {
+                    "value": {
+                      "Response": {
+                        "RequestId": "367bdaa8-e4c7-a070-ecf6-00fea8e6fab9",
+                        "User": {
+                          "Id": 150258,
+                          "Status": 1,
+                          "Email": "test@coding.net",
+                          "GlobalKey": "EHRIORBbfF",
+                          "Avatar": "https://coding-net-production-static-ci.codehub.cn/WM-TEXT-AVATAR-nfutKljCRlKcSLDTOmrv.jpg",
+                          "Name": "张三",
+                          "NamePinYin": "zhangsan",
+                          "Phone": "13800138000",
+                          "PhoneValidation": 1,
+                          "EmailValidation": 1,
+                          "PhoneRegionCode": "+86",
+                          "TeamId": 102882
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "### 输入参数\n\n| 参数名称 | 必选 | 类型 | 描述 |\n|---------|---------|---------|---------|\n| Action | 是 | String | 公共参数，本接口取值：DescribeCodingCurrentUser |\n\n### 输出参数\n\n| 参数名称 | 类型 | 描述 |\n|---------|---------|---------|\n| RequestId | String | 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。|\n| User | User 类型 | 用户个人信息 |\n\n### 参数说明\n\n| 名称 | 类型 |  描述 |\n|------|------|-------|\n| Id | Integer | 用户 ID |\n| Status | Integer | 状态(新用户/已激活)<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| Email | String | 邮箱<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| GlobalKey | String | 用户唯一标志<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| Avatar | String | 头像地址<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| Name | String | 姓名<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| NamePinYin | String | 姓名拼音<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| Phone | String | 联系电话<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| PhoneValidation | Integer | 手机是否已验证<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| EmailValidation | Integer | 邮箱是否已验证<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| PhoneRegionCode | String | 手机号地区<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n| TeamId | Integer | 团队 ID<br/>注意：此字段可能返回 null，表示取不到有效值。 |\n"
+      }
+    },
+    "/增加项目成员": {
+      "post": {
+        "summary": "增加项目成员",
+        "operationId": "CreateProjectMember 增加项目成员",
+        "responses": {
+          "200": {
+            "description": "输入示例 / 输出示例",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "输入示例": {
+                    "value": {
+                      "Action": "CreateProjectMember",
+                      "ProjectId": 2,
+                      "Type": 80,
+                      "UserGlobalKeyList": [
+                        "123",
+                        "123"
+                      ]
+                    }
+                  },
+                  "输出示例": {
+                    "value": {
+                      "Response": {
+                        "RequestId": "ae8e2d5f-569b-443e-8c61-440ea3a7562a"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "### 输入参数\n\n| 参数名称 | 必选 | 类型 | 描述 |\n|---------|---------|---------|---------|\n| Action | 是 | String | 公共参数，本接口取值：CreateProjectMember |\n| ProjectId | 是 | Integer | 项目 Id |\n| Type | 是 | Integer | 类型 ｜90 项目管理员｜80 项目成员｜\n| UserGlobalKeyList | 是 | Array of String | 用户所属的数组 |\n\n### 输出参数\n\n| 参数名称 | 类型 | 描述 |\n|---------|---------|---------|\n| RequestId | String | 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。|"
+      }
+    },
+    "/增加项目成员": {
+      "post": {
+        "summary": "增加项目成员",
+        "operationId": "CreateProjectMember 增加项目成员",
+        "responses": {
+          "200": {
+            "description": "输入示例 / 输出示例",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "输入示例": {
+                    "value": {
+                      "Action": "CreateProjectMember",
+                      "ProjectId": 2,
+                      "Type": 80,
+                      "UserGlobalKeyList": [
+                        "123",
+                        "123"
+                      ]
+                    }
+                  },
+                  "输出示例": {
+                    "value": {
+                      "Response": {
+                        "RequestId": "ae8e2d5f-569b-443e-8c61-440ea3a7562a"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "### 输入参数\n\n| 参数名称 | 必选 | 类型 | 描述 |\n|---------|---------|---------|---------|\n| Action | 是 | String | 公共参数，本接口取值：CreateProjectMember |\n| ProjectId | 是 | Integer | 项目 Id |\n| Type | 是 | Integer | 类型 ｜90 项目管理员｜80 项目成员｜\n| UserGlobalKeyList | 是 | Array of String | 用户所属的数组 |\n\n### 输出参数\n\n| 参数名称 | 类型 | 描述 |\n|---------|---------|---------|\n| RequestId | String | 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。|"
+      }
+    },
+    "/增加项目成员": {
+      "post": {
+        "summary": "增加项目成员",
+        "operationId": "CreateProjectMember 增加项目成员",
+        "responses": {
+          "200": {
+            "description": "输入示例 / 输出示例",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                },
+                "examples": {
+                  "输入示例": {
+                    "value": {
+                      "Action": "CreateProjectMember",
+                      "ProjectId": 2,
+                      "Type": 80,
+                      "UserGlobalKeyList": [
+                        "123",
+                        "123"
+                      ]
+                    }
+                  },
+                  "输出示例": {
+                    "value": {
+                      "Response": {
+                        "RequestId": "ae8e2d5f-569b-443e-8c61-440ea3a7562a"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "description": "### 输入参数\n\n| 参数名称 | 必选 | 类型 | 描述 |\n|---------|---------|---------|---------|\n| Action | 是 | String | 公共参数，本接口取值：CreateProjectMember |\n| ProjectId | 是 | Integer | 项目 Id |\n| Type | 是 | Integer | 类型 ｜90 项目管理员｜80 项目成员｜\n| UserGlobalKeyList | 是 | Array of String | 用户所属的数组 |\n\n### 输出参数\n\n| 参数名称 | 类型 | 描述 |\n|---------|---------|---------|\n| RequestId | String | 唯一请求 ID，每次请求都会返回。定位问题时需要提供该次请求的 RequestId。|"
+      }
+    },        
+  },
+  "components": {
+    "schemas": {
+      "Pet": {
+        "title": "Pet",
+        "type": "object",
+        "description": "宠物实体信息",
+        "x-examples": {},
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "ID"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Category"
+          },
+          "status": {
+            "type": "string",
+            "description": "状态",
+            "enum": [
+              "available",
+              "pending",
+              "sold"
+            ]
+          },
+          "photoUrls": {
+            "type": "array",
+            "description": "照片地址列表",
+            "items": {
+              "type": "string",
+              "description": "照片地址"
+            }
+          },
+          "name": {
+            "type": "string",
+            "example": "doggie",
+            "description": "名称"
+          },
+          "isHealthy": {
+            "type": "boolean",
+            "description": "是否健康"
+          },
+          "tags": {
+            "type": "array",
+            "description": "标签列表",
+            "items": {
+              "type": "object",
+              "description": "标签",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "description": "ID"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "名称"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Category": {
+        "title": "Category",
+        "type": "object",
+        "description": "宠物分类",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "名称"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "JSONResponse": {
+        "title": "Response",
+        "type": "object",
+        "description": "JSON 正常返回",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "description": "消息码"
+          },
+          "type": {
+            "type": "string",
+            "description": "类型",
+            "enum": [
+              "SUCCESS",
+              "ERROR"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "异常信息"
+          }
+        },
+        "example": {
+          "code": 0,
+          "type": "SUCCESS",
+          "message": ""
+        }
+      },
+      "StoreOrder": {
+        "title": "StoreOrder",
+        "type": "object",
+        "description": "商店订单",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "订单 ID"
+          },
+          "pet": {
+            "$ref": "#/components/schemas/Pet"
+          },
+          "shipDate": {
+            "type": "string",
+            "format": "date",
+            "description": "配送日期"
+          },
+          "status": {
+            "type": "string",
+            "default": "placed",
+            "enum": [
+              "placed",
+              "approevd",
+              "delivered"
+            ],
+            "description": "订单状态"
+          },
+          "completed": {
+            "type": "boolean",
+            "default": false,
+            "description": "订单是否完成"
+          }
+        }
+      }
+    },
+    "securitySchemes": {},
+    "responses": {
+      "JsonResponse": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/JSONResponse"
+            },
+            "examples": {
+              "正常返回": {
+                "value": {
+                  "code": 0,
+                  "type": "SUCCESS",
+                  "message": ""
+                }
+              }
+            }
+          }
+        },
+        "description": "JSON 正常返回"
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "项目协同",
+      "description": "通过 API 接口调用项目协同中的相关数据。",
+      "externalDocs": {
+        "description": "包含迭代、事项等",
+        "url": "http://coding.net"
+      }
+    },
+    {
+      "name": "项目设置",
+      "description": "通过 API 快捷使用项目设置"
+    },
+    {
+      "name": "代码托管",
+      "description": "包括分支、保护分支等"
+    }
+  ]
+}
